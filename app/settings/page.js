@@ -30,7 +30,6 @@ export default function Settings() {
             })
             .catch(err => {
                 console.error("Failed to load settings:", err);
-                alert("Error loading settings. Check console for details.");
                 setLoading(false);
             });
     }, []);
