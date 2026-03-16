@@ -29,8 +29,18 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is configured for deployment to Google Cloud Run.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Google Cloud Configuration
+The project details are stored in the `.env` file:
+- **Project ID**: `red-zone-484705`
+- **Project Number**: `961966178844`
+
+### Deploying to Cloud Run
+To deploy the application, run the provided deployment script:
+```bash
+./deploy.sh
+```
+This script will build the Docker container using Cloud Build and deploy it to Cloud Run.
