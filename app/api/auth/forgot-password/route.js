@@ -60,6 +60,6 @@ export async function POST(req) {
     return NextResponse.json({ message: 'If an account exists with this email, a reset link has been sent.' });
   } catch (error) {
     console.error('Forgot password error:', error);
-    return NextResponse.json({ error: `Internal server error: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error. Please try again later.' }, { status: 500 });
   }
 }
