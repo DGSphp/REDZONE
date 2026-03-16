@@ -83,7 +83,7 @@ export default function LandingPage() {
                 </h1>
 
                 <p style={{ fontSize: 'min(1.5rem, 5vw)', color: '#94a3b8', lineHeight: 1.6, marginBottom: '3rem', fontWeight: 300 }}>
-                    A shared perspective on the cycle. Understand ovulation, track moods, and navigate life's rhythms together with empathy and precision.
+                    A shared perspective on the cycle. Understand ovulation, track moods, and navigate life&apos;s rhythms together with empathy and precision.
                 </p>
 
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -196,7 +196,7 @@ export default function LandingPage() {
 
                          <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem', color: '#94a3b8' }}>
                             {modalMode === 'login' ? (
-                                <>Don't have an account? <span onClick={() => openModal('signup')} style={{ color: '#c4b5fd', cursor: 'pointer', fontWeight: 600 }}>Sign Up</span></>
+                                <>Don&apos;t have an account? <span onClick={() => openModal('signup')} style={{ color: '#c4b5fd', cursor: 'pointer', fontWeight: 600 }}>Sign Up</span></>
                             ) : modalMode === 'signup' ? (
                                 <>Already have an account? <span onClick={() => openModal('login')} style={{ color: '#c4b5fd', cursor: 'pointer', fontWeight: 600 }}>Log In</span></>
                             ) : (
