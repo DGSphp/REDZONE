@@ -5,7 +5,7 @@ import { sendNotification } from '@/lib/mailer';
 
 export async function POST(request) {
     try {
-        const allSettings = getAllUserSettings();
+        const allSettings = await getAllUserSettings();
         const { searchParams } = new URL(request.url);
         const isTest = searchParams.get('test') === 'true';
 
