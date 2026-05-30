@@ -12,7 +12,10 @@ export default function AutoRefresh() {
     const router = useRouter();
 
     useEffect(() => {
-        // Function to calculate time until next midnight
+        let currentTimer = null;
+        let mounted = true;
+        let lastDate = new Date().toDateString();
+
         const getTimeUntilMidnight = () => {
             const now = new Date();
             const midnight = new Date(now);
@@ -22,23 +25,33 @@ export default function AutoRefresh() {
 
         const scheduleRefresh = () => {
             const timeToMidnight = getTimeUntilMidnight();
-
-            // Safety cap: if for some reason it's negative or too small, wait 10 seconds
             const delay = Math.max(timeToMidnight, 10000);
 
-            const timer = setTimeout(() => {
-                router.refresh();
-                // Reschedule for next day
+            currentTimer = setTimeout(() => {
+                if (!mounted) return;
+                if (document.visibilityState === 'visible') {
+                    router.refresh();
+                    lastDate = new Date().toDateString();
+                }
                 scheduleRefresh();
             }, delay);
-
-            return timer;
         };
 
-        const timer = scheduleRefresh();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && new Date().toDateString() !== lastDate) {
+                router.refresh();
+                lastDate = new Date().toDateString();
+            }
+        };
 
-        // Clean up timer on unmount
-        return () => clearTimeout(timer);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        scheduleRefresh();
+
+        return () => {
+            mounted = false;
+            clearTimeout(currentTimer);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [router]);
 
     return null;

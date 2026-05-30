@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server';
-import { getUserByEmail, createPasswordReset } from '@/lib/db';
+import { getUserByEmail, createPasswordReset, checkAndRecordRateLimit } from '@/lib/db';
 import { sendNotification } from '@/lib/mailer';
-import crypto from 'crypto';
+import { checkCsrf } from '@/lib/auth';
 
 export async function POST(req) {
   try {
+    const csrfError = checkCsrf(req);
+    if (csrfError) return csrfError;
+
     const { email } = await req.json();
 
-    if (!email) {
+    if (!email || typeof email !== 'string' || email.length > 254) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    // Rate limit: 3 reset requests per email per hour
+    const rateLimitKey = `reset:${email.toLowerCase().trim()}`;
+    const allowed = await checkAndRecordRateLimit(rateLimitKey, 3, 3600);
+    if (!allowed) {
+      return NextResponse.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
 
     const user = await getUserByEmail(email);
@@ -18,9 +32,11 @@ export async function POST(req) {
       return NextResponse.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
 
-    // Generate token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+    // Generate token using Web Crypto API
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    const token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const expiresAt = new Date(Date.now() + 3600000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ''); // 1 hour, SQLite format
 
     try {
       await createPasswordReset(user.id, token, expiresAt);
@@ -30,7 +46,7 @@ export async function POST(req) {
     }
 
     // Send email
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://redzonecouple.site'}/reset-password?token=${token}`;
     
     try {
       await sendNotification(
@@ -52,9 +68,8 @@ export async function POST(req) {
       );
     } catch (mailError) {
       console.error('Email error in forgot-password:', mailError);
-      // We still return success to the user for security, but we log the actual error
-      // Actually, if it's an internal error, we should probably tell them something went wrong with the service
-      return NextResponse.json({ error: 'Failed to send recovery email. Please try again later.' }, { status: 500 });
+      // Return same generic message to avoid leaking whether the email exists
+      return NextResponse.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
 
     return NextResponse.json({ message: 'If an account exists with this email, a reset link has been sent.' });

@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
-import { updateUserPassword, getUserById } from '@/lib/db';
-import { getSession, hashPassword, comparePassword } from '@/lib/auth';
+import { updateUserPassword, getUserById, deletePasswordResetsByUserId, checkAndRecordRateLimit } from '@/lib/db';
+import { getSession, hashPassword, comparePassword, checkCsrf } from '@/lib/auth';
 
 export async function POST(req) {
   try {
+    const csrfError = checkCsrf(req);
+    if (csrfError) return csrfError;
+
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rateLimitKey = `change-password:${session.userId}`;
+    const allowed = await checkAndRecordRateLimit(rateLimitKey, 5, 900);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many attempts. Please try again in 15 minutes.' }, { status: 429 });
     }
 
     const { oldPassword, newPassword } = await req.json();
@@ -31,6 +40,9 @@ export async function POST(req) {
 
     const hashedNewPassword = await hashPassword(newPassword);
     await updateUserPassword(session.userId, hashedNewPassword);
+
+    // Invalidate all password reset tokens for this user
+    await deletePasswordResetsByUserId(session.userId);
 
     return NextResponse.json({ message: 'Password changed successfully' });
   } catch (error) {
